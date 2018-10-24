@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>CLOUD FOG SVM</title>
+<style>
+        .hidden{
+                display: none;
+        }
+</style>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script>
+        
+        function showgraph(){
+                jQuery.ajax({
+                        url:"http://192.168.43.210/showgraph",
+                        type:"GET",
+                        async:false,
+                        success:function (result){
+                                console.log(result);
+                                $("#plot").html('<img src = "'+result+'"/>').removeClass("hidden");
+                        }
+                });
+        }
+
+        function showtraingraph(){
+                jQuery.ajax({
+                        url:"http://192.168.43.210/showtraingraph",
+                        type:"GET",
+                        async:false,
+                        success:function (result){
+                                console.log(result);
+                                $("#plot").html('<img src = "'+result+'"/>').removeClass("hidden");
+                        }
+                });
+        }
+
+        function train(){
+                var paramdata = {
+                        "Cparam":$("#cparam").val()
+                };
+                var curTime = performance.now();
+                jQuery.ajax({
+                        url:"http://192.168.43.210/train",
+                        type:"POST",
+                        data:JSON.stringify(paramdata,null,'\t'),
+                        contentType:"application/json;charset=UTF-8",
+                        async:false,
+                        success:function (result){
+                                alert(result);
+                                var responseTime = performance.now();
+                                console.log("Time at which the response is received:"+responseTime);
+                                var delay = responseTime - curTime;
+                                console.log('Delay:'+delay);
+                                var timedata = {
+                                        "delay":delay
+                                };
+                                jQuery.ajax({
+                                        url:"http://192.168.43.210/savetraintime",
+                                        type:"POST",
+                                        data:JSON.stringify(timedata,null,'\t'),
+                                        contentType:"application/json;charset=UTF-8",
+                                        async:false,
+                                        success: function (result){
+                                                if(result == "1")
+                                                        console.log("success");
+                                        }
+                                });
+                        }
+                });
+        }
+
+        function makePostCall(){
+                // var curTime = (new Date).getTime()/1000;
+                var curTime = performance.now();
+                console.log("Time at which the request is made:"+curTime);
+                var irisdata = {
+                        "sepalLength": $("#sepallength").val(),
+                        "sepalWidth": $("#sepalwidth").val(),
+                        "petalLength": $("#petallength").val(),
+                        "petalWidth": $("#petalwidth").val()
+                };
+
+                jQuery.ajax({
+                        url:"http://192.168.43.210/predict",
+                        type:"POST",
+                        data:JSON.stringify(irisdata,null,'\t'),
+                        contentType:"application/json;charset=UTF-8",
+                        async:false,
+                        success:function (result){
+                                console.log(result);
+                                if(result){
+                        var len = result.length;
+                        var txt = "";
+                        if(len > 0){
+                            for(var i=0;i<len;i++){
+                                if(result[i].name && result[i].value){
+                                    txt += "<tr><td>"+result[i].name+"</td><td>"+result[i].value+"</td></tr>";
+                                }
+                            }
+                            if(txt != ""){
+                                $("#output").append(txt).removeClass("hidden");
+                                }
+                        }
+                    }
+                    // var responseTime = (new Date).getTime()/1000;
+                                var responseTime = performance.now();
+                                console.log("Time at which the response is received:"+responseTime);
+                                var delay = responseTime - curTime;
+                                console.log('Delay:'+delay);
+                                var timedata = {
+                                        "delay":delay
+                                };
+                                jQuery.ajax({
+                                        url:"http://192.168.43.210/savetime",
+                                        type:"POST",
+                                        data:JSON.stringify(timedata,null,'\t'),
+                                        contentType:"application/json;charset=UTF-8",
+                                        async:false,
+                                        success: function (result){
+                                                if(result == "1")
+                                                        console.log("success");
+                                        }
+                                });
+                        }
+                });
+        }
+
+
+</script>
+</head>
+<body>
+        <h3>Input Form</h3>
+        <hr>
+        <form>
+
+                <input type="text" id="sepallength" placeholder="sepal-length"> <br> <br>
+                <input type="text" id="sepalwidth" placeholder="sepal-width"> <br> <br>
+                <input type="text" id="petallength" placeholder="petal-length"> <br> <br>
+                <input type="text" id="petalwidth" placeholder="petal-width"> <br> <br>
+        </form>
+        <button name="predict" onclick="makePostCall();">Predict</button>
+        <br>
+        <br>
+        <button name="predict" onclick="showgraph();">View Time Plot</button>
+        <br>
+        <br>
+        <form>
+                <input type="text" id="cparam" placeholder="cparam"><br><br>
+        </form>
+        <button name="predict" onclick="train();">Train Model</button>
+        <br>
+        <br>
+        <button name="predict" onclick="showtraingraph();">View Training Plot</button>
+        <br>
+        <br>
+        <table id = "output" class="hidden">
+        </table>
+        <div class="hidden" id="plot"></div>
+</body>
+</html>
